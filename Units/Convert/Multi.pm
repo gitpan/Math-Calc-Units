@@ -50,7 +50,16 @@ sub to_canonical {
 
 # name_to_canonical : unitName -> value x baseUnit
 #
+# Memoizing this doubles the speed of the test suite.
+#
+my %CANON_CACHE;
 sub name_to_canonical {
+    my $unitName = shift;
+    $CANON_CACHE{$unitName} ||= [ _name_to_canonical($unitName) ];
+    return @{ $CANON_CACHE{$unitName} };
+}
+
+sub _name_to_canonical {
     my ($unitName) = @_;
     
     # First, check for compound units
@@ -66,8 +75,6 @@ sub name_to_canonical {
     return Math::Calc::Units::Convert::Base->to_canonical($unitName);
 }
 
-# get_class : unitName -> "Math::Calc::Units::Convert::<unitClass>"
-#
 sub get_class {
     my ($unitName) = @_;
     my (undef, $canon) = name_to_canonical($unitName);
@@ -109,9 +116,9 @@ sub major_pref {
 }
 
 sub range_score {
-    my ($val, $unitName) = @_;
+    my ($val, $unitName, $allow_out_of_range) = @_;
     die if ref $unitName;
-    return get_class($unitName)->range_score($val, $unitName);
+    return get_class($unitName)->range_score($val, $unitName, $allow_out_of_range);
 }
 
 sub pref_score {
